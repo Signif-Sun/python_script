@@ -8,10 +8,12 @@ import shutil
 import sys
 import time
 import re
+from scipy.misc import imread
+import numpy
 
 try:
     class dealpics(object):
-	
+
 #------------------该函数是为了获取相应的文件路径名称，采取正则表达式和os包函数使用---------------------
         def getdir(self):
 #------------------正则表达式必须以 "盘符:\"  开头----------------------------------------------------
@@ -66,8 +68,19 @@ try:
             return needed_remove,compared_remove,save_removed_pics
 
 
+        def ys_sleep(self):
+#---------------------采取时间函数休眠的方式来控制程序的退出时间>3s-----------------------------------------------------
+            tc_time = int(input("请输入你需要多少秒(>3s)后退出该应用！或者不输入持续等待！\n"))
+            while tc_time <= 3:
+                tc_time = int(input("请输入时间大于3s，或者不输入持续等待！\n"))
+            #time.sleep(tc_time-3)
+            for i in range(tc_time):
+                print("即将退出该应用，剩余时间%ds！"%tc_time)
+                tc_time = tc_time - 1
+                time.sleep(1)
+
 #--------------------该函数采取了os包文件的列表，复制，删除等方法实现删除与拷贝----------------------------------
-        def removepics_only(self):
+        def removepics_nameonly(self):
 
             [needed_remove,compared_remove,save_removed_pics] = self.getdir()
 #-------------------以列为数据类型进行比对从而来完成数据的重复分析-------------------------------------------------
@@ -84,35 +97,85 @@ try:
 
             os.mkdir(r'%s'%save_removed_pics)
             #print(flag)
+
 #--------------------列出已删文件，也就是相同的文件------------------------------------------------------
             print('以下这些照片是你已经删除的：')
             for index_two in imglist_two:
                 for index_one in imglist_one:
+
                     if index_two == index_one:
+                                i = i + 1
+                                print(index_one)
+                                shutil.copyfile('%s\%s'%(needed_remove,index_one),'%s\%s'%(save_removed_pics,index_one))
+                                os.remove(r'%s\%s'%(needed_remove,index_one))
+
+
+            print('你已经删除了%d张照片...\n'%i)
+
+            self.ys_sleep()
+
+
+
+        def removepics_content(self):
+
+            [needed_remove,compared_remove,save_removed_pics] = self.getdir()
+#-------------------以列为数据类型进行比对从而来完成数据的重复分析-------------------------------------------------
+            imglist_one = []
+            imglist_two = []
+#--------------------使用i来记录重复即要删文件的个数------------------------------------------------------
+            i = 0
+
+            for filename in os.listdir(r'%s'%needed_remove):
+                imglist_one.append(filename)
+
+            for filename in os.listdir(r'%s'%compared_remove):
+                imglist_two.append(filename)
+
+            os.mkdir(r'%s'%save_removed_pics)
+            #print(flag)
+
+#--------------------列出已删文件，也就是相同的文件------------------------------------------------------
+            print('以下这些照片是你已经删除的：')
+            #j = 0
+            for index_two in imglist_two:
+                for index_one in imglist_one:
+#-------------------读取图像的矩阵信息----------------------------------------------------------------
+                    img2 = imread(r'%s\%s'%(compared_remove,index_two))
+                    img1 = imread(r'%s\%s'%(needed_remove,index_one))
+                    #print(i,'---------------------------------\n')
+                    '''
+                    for img_len in range(min(len(img1.shape),len(img2.shape))):
+                        if img1.shape[img_len] == img2.shape[img_len]:
+                            j = j + 1
+
+
+                    if j == min(len(img1.shape),len(img2.shape)) - 1:
+                    '''
+#----------------------同一照片矩阵的行列来完成图片的识别，主要的方法是图片的矩阵大小基本不一致-------------------------
+                    if img1.shape == img2.shape:
                         i = i + 1
+                        print(index_one)
                         shutil.copyfile('%s\%s'%(needed_remove,index_one),'%s\%s'%(save_removed_pics,index_one))
                         os.remove(r'%s\%s'%(needed_remove,index_one))
-                        print(index_one)
-            print('你已经删除了%d张照片...\n'%i)
-#---------------------采取时间函数休眠的方式来控制程序的退出时间>3s-----------------------------------------------------
-            tc_time = int(input("请输入你需要多少秒(>3s)后退出该应用！或者不输入持续等待！\n"))
-            while tc_time <= 3:
-                tc_time = int(input("请输入时间大于3s，或者不输入持续等待！\n"))
-            #time.sleep(tc_time-3)
-            for i in range(tc_time):
-                print("即将退出该应用，剩余时间%ds！"%tc_time)
-                tc_time = tc_time - 1
-                time.sleep(1)
+#--------------------如果图片已删也要从列表中删除，否则打不开文件------------------------------------------------------
+                        imglist_one.remove(index_one)
+                        #print('----------------',len(imglist_one))
+                        break
 
+            print('你已经删除了%d张照片...\n'%i)
+
+            self.ys_sleep()
 
 except:
     print("Unexpected error:", sys.exc_info()) # sys.exc_info()返回出错信息
 
-if __name__ == "__main__":  
-	dealimgs = dealpics()
-	dealimgs.removepics_only()
-
-
-
-
-
+if __name__ == "__main__":
+    dealimgs = dealpics()
+    print("本应用可以使用来处理不同文件中文件的相同照片的名字相同或者图片内容相同的情况！")
+    flag = input("您可以通过输入0/1来分别选择处理文件夹中名字相同或者图片内容相同：\n")
+    while(flag != '1' and flag != '0'):
+        flag = input("您输入有误，请您重新输入0/1来选择处理文件夹中名字相同或者图片内容相同：\n")
+    if flag == '1':
+        dealimgs.removepics_content()
+    if flag == '0':
+        dealimgs.removepics_nameonly()
