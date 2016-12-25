@@ -1,0 +1,81 @@
+#以太网数据帧的操作,以及解包拿数据，信息传递的方式
+
+
+import re
+
+#传输数据如何来转化为二进制数字
+def getMessage():
+    #需要传输的数据
+    message = []
+    message = input("please input your the message which you need to send!\n")
+
+    #传输的数据包含16进制标记的list
+    trs_message = []
+
+    #去掉数据帧的16进制标记后的list
+    trs_del0x_message = []
+
+    for i in range(len(message)):
+        trs_message.append(hex(ord(message[i])))
+
+    for i in trs_message:
+        if i.startswith('0x'):
+            i = i[2:]
+            trs_del0x_message.append(i)
+
+    rst_message = restuctMessage(trs_del0x_message)
+
+    return rst_message
+
+#数据帧装包
+def restuctMessage(message):
+    Preamble = ['AA','AA','AA','AA','AA','AA','AA']   #帧头的preamble
+    SFD = ['AB']   #satrt frame delimiter
+    FCS = ['AA','AA','EE']   #frame check seque
+    DST = ['08','08','08','08']   #distination ip
+    SRC = ['00','00','00','00']   #sorce ip
+
+    rst_message = []
+
+    rst_message.extend(Preamble)
+    rst_message.extend(SFD)
+    rst_message.extend(DST)
+    rst_message.extend(SRC)
+
+    rst_message.extend(message)
+
+    rst_message.extend(FCS)
+
+    return rst_message
+
+#取出数据帧中的信息
+def analysis_msg(message):
+    rsv_message = []
+    if len(message) > 19:
+        for i in range(len(message)):
+            if i < 7:
+                if message[i] == 'AA':  #判断preamble中是否是是7个AA(7 byte)
+                   pass
+                else:
+                    print('the msg don\'t have preamble!\n')
+                    break
+            if i == 7:
+                if message[i] == 'AB':  #判断SFD中是否是是1个AB(1 byte)
+                   pass
+                else:
+                    print('the msg don\'t have SFD!\n')
+                    break
+            if i > 15 and i < len(message)-3:
+                pass
+
+                #message = hex(int(message[i],16))
+                rsv_message.append(chr(int(message[i],16)))
+
+    return rsv_message
+
+
+if __name__ == "__main__":
+    message = getMessage()
+    message = analysis_msg(message)
+
+    print("The RSV message is \'%s\'"%''.join(message))
